@@ -80,20 +80,22 @@
         public function getBalances() {
             $balances = $this->query(
                 array(
-                    'command' => 'returnBalances'
+                    'command' => 'returnCompleteBalances'
                 )
             );
 
             $nonZeroBalances = array();
 
-            foreach ($balances as $currency => $balance ) {
+            foreach ($balances as $currency => $attributes) {
+							$balance = $attributes['available'] + $attributes['onOrders'];
+
             	if ( $balance > 0 ) {
 								if ( $currency == "STR" ) { $currency = "XLM"; }
             		$nonZeroBalances[(string)$currency] = $balance;
             	}
-			}
+						}
 
-			return $nonZeroBalances;
+						return $nonZeroBalances;
         }
 
     }

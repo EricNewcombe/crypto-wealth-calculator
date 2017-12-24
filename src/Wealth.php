@@ -70,8 +70,9 @@ class Wealth
         }
 
         foreach ($responseBody as $currencyCode => $rate) {
+            $rate = (float)$rate;
             if (!is_float($rate)) {
-                throw new CurrencyException($currencyCode . ' balance must be represented as a float');
+                throw new CurrencyException($currencyCode . ' balance must be represented as a float ' . $rate);
             }
 
             if (isset($this->currencies[$currencyCode]) && is_object($this->currencies[$currencyCode]) && get_class($this->currencies[$currencyCode]) === Currency::class) {
