@@ -1,6 +1,8 @@
-<?php 
+<?php
 
 	namespace Dblencowe\Wealth;
+
+	use Dblencowe\Wealth\Exceptions\CurrencyException;
 
 	class Poloniex {
         protected $api_key;
@@ -12,20 +14,20 @@
             $this->api_key = $api_key;
             $this->api_secret = $api_secret;
         }
-               
+
         private function query(array $req = array()) {
             // API settings
             $key = $this->api_key;
             $secret = $this->api_secret;
-     
+
             // generate a nonce to avoid problems with 32bit systems
             $mt = explode(' ', microtime());
             $req['nonce'] = $mt[1].substr($mt[0], 2, 6);
-     
+
             // generate the POST data string
             $post_data = http_build_query($req, '', '&');
             $sign = hash_hmac('sha512', $post_data, $secret);
-     
+
             // generate the extra headers
             $headers = array(
                     'Key: '.$key,
@@ -74,7 +76,7 @@
             $json = json_decode($feed, true);
             return $json;
         }
-       
+
         public function getBalances() {
             $balances = $this->query(
                 array(
@@ -86,6 +88,7 @@
 
             foreach ($balances as $currency => $balance ) {
             	if ( $balance > 0 ) {
+								if ( $currency == "STR" ) { $currency = "XLM"; }
             		$nonZeroBalances[(string)$currency] = $balance;
             	}
 			}
@@ -93,5 +96,5 @@
 			return $nonZeroBalances;
         }
 
-    }	
+    }
  ?>

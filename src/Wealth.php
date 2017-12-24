@@ -85,6 +85,25 @@ class Wealth
         }
     }
 
+    private function retrieveBitcoinRate(): float
+    {
+      $response = $this->client->request('GET',"/data/price?fsym={$this->baseCurrency}&tsyms=BTC");
+
+
+      $responseBody = json_decode($response->getBody()->getContents());
+
+      if ($response->getStatusCode() !== 200 || $responseBody->Response === 'Error') {
+          throw new CurrencyException('Error fetching currencies: ' . $responseBody->Message);
+      }
+
+      foreach ($responseBody as $currencyCode => $rate) {
+        if ( $currencyCode == "BTC" ) { return $rate; }
+      }
+
+      return -1;
+
+    }
+
     private function calculateTotalValue(): float
     {
         $total = 0.0;
@@ -107,31 +126,47 @@ class Wealth
         return $total;
     }
 
+    private function calculateBitcoinValue(): float
+    {
+      return -1;
+    }
+
     public function run()
     {
         setlocale(LC_MONETARY, $this->locale);
 
         $table = new ConsoleTable();
-        $table->setHeaders(['Currency', 'Current Wealth', 'Change']);
+        $table->setHeaders(['Currency', 'Coin Owned', 'Current Value', 'Change']);
+
+        $bitcoinRate = -1.0;
 
         /** @var Currency $currency */
         foreach ($this->currencies as $currency) {
 
+            // if ( $currency->getCode() == "BTC" ) { $bitcoinRate = (float)$currency->getLatestRate(); echo $bitcoinRate;}
+
             $amountChanged = $currency->change();
+            $coinOwned = sprintf('%.6f', $currency->getBalance());
 
             $balance = money_format('%.2n', $currency->wealth());
             $change = money_format('%.2n', $amountChanged);
-            $table->addRow([$currency->getCode(), $balance, $this->outputChange($amountChanged, $change)]);
+            $table->addRow([$currency->getCode(), $coinOwned,$balance, $this->outputChange($amountChanged, $change)]);
+        }
+
+        if ( $bitcoinRate == -1 ) {
+          $bitcoinRate = $this->retrieveBitcoinRate();
         }
 
         // Add total line to it
-        $table->addRow(["--------","-----------","-----"]);
+        $table->addRow(["--------","-----------","-----------","-----"]);
 
         // Add the total and change in total
         $amountChanged = $this->calculatePreviousValue();
+        $totalValue = $this->calculateTotalValue();
         $prevTotal = money_format('%.2n', $amountChanged);
-        $total = money_format('%.2n', $this->calculateTotalValue());
-        $table->addRow(["Total", $total, $this->outputChange($amountChanged,$prevTotal)]);
+        $total = money_format('%.2n', $totalValue);
+        $bitcoinValue = sprintf('%.6f',$totalValue * $bitcoinRate);
+        $table->addRow(["Total", "$bitcoinValue BTC", $total, $this->outputChange($amountChanged,$prevTotal)]);
 
         $table->setPadding(3)->display();
     }
