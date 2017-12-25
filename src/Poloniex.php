@@ -51,7 +51,7 @@
             // run the query
             $res = curl_exec($ch);
 
-            if ($res === false) throw new Exception('Curl error: '.curl_error($ch));
+            if ($res === false) throw new CurrencyException('Curl error: '.curl_error($ch));
             //echo $res;
             $dec = json_decode($res, true);
 
